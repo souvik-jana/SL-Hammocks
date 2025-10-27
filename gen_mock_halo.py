@@ -334,47 +334,123 @@ def lens_judge_d_genmock(fov, zz_ar):
         n_src = np.random.poisson(nn_src)
 
         indices2 = np.nonzero(n_src)[0]
-        if len(indices2) == 0:
+        if len(Mhl_tab) == 0:
             continue
 
-        # Subtract only haloes with at least one source present behind
-        cut_n_src, cut_box_src = n_src[indices2], box_src[indices2]
-        zl_tab2 = zl_tab[indices2]
-        Mhl_200c_tab2 = Mhl_tab[indices2]
+        # Compute subhalo properties for all haloes
+        zl_tab1 = zl_tab
+        Mhl_200c_tab1 = Mhl_tab
 
-        Mhl_vir_tab2, rvirhl_tab2, conhl_vir_tab2, eliphl_tab2, polarhl_tab2 = lens_halo.halo_properties_200c2vir(
-            Mhl_200c_tab2, zl, g.sig_c
+        Mhl_vir_tab1, rvirhl_tab1, conhl_vir_tab1, eliphl_tab1, polarhl_tab1 = lens_halo.halo_properties_200c2vir(
+            Mhl_200c_tab1, zl, g.sig_c
         )
-        rs_hl_tab2 = rvirhl_tab2 / conhl_vir_tab2
+        rs_hl_tab1 = rvirhl_tab1 / conhl_vir_tab1
 
-        Mcenl_tab2, tb_cenl_tab2, elipcenl_tab2, polarcenl_tab2 = lens_gals.galaxy_properties(
-            Mhl_vir_tab2, zl, polarhl_tab2, g.paramc, g.frac_SM_IMF, g.TYPE_GAL_SIZE, g.sig_mcen, sig_tb=g.sig_tb
+        Mcenl_tab1, tb_cenl_tab1, elipcenl_tab1, polarcenl_tab1 = lens_gals.galaxy_properties(
+            Mhl_vir_tab1, zl, polarhl_tab1, g.paramc, g.frac_SM_IMF, g.TYPE_GAL_SIZE, g.sig_mcen, sig_tb=g.sig_tb
         )
-        mmsh2, mmsh_acc2, NNsh2 = lens_subhalo.subhalo_mass_function(
-            Mhl_vir_tab2, zl_tab2, min_Msh, interp_dnsh, interp_msh_acc_Mh, length=output_length
+        mmsh1, mmsh_acc1, NNsh1 = lens_subhalo.subhalo_mass_function(
+            Mhl_vir_tab1, zl_tab1, min_Msh, interp_dnsh, interp_msh_acc_Mh, length=output_length
         )
 
-        # Start: for-loop-2 of host halos
+        if len(indices2) > 0:
+            # Subtract only haloes with at least one source present behind
+            cut_n_src, cut_box_src = n_src[indices2], box_src[indices2]
+            zl_tab2 = zl_tab[indices2]
+            Mhl_200c_tab2 = Mhl_tab[indices2]
+
+            Mhl_vir_tab2, rvirhl_tab2, conhl_vir_tab2, eliphl_tab2, polarhl_tab2 = lens_halo.halo_properties_200c2vir(
+                Mhl_200c_tab2, zl, g.sig_c
+            )
+            rs_hl_tab2 = rvirhl_tab2 / conhl_vir_tab2
+
+            Mcenl_tab2, tb_cenl_tab2, elipcenl_tab2, polarcenl_tab2 = lens_gals.galaxy_properties(
+                Mhl_vir_tab2, zl, polarhl_tab2, g.paramc, g.frac_SM_IMF, g.TYPE_GAL_SIZE, g.sig_mcen, sig_tb=g.sig_tb
+            )
+            mmsh2, mmsh_acc2, NNsh2 = lens_subhalo.subhalo_mass_function(
+                Mhl_vir_tab2, zl_tab2, min_Msh, interp_dnsh, interp_msh_acc_Mh, length=output_length
+            )
+
+            # Start: for-loop-2 of host halos
+            for j, (mh, mh_200c, mcen, rvir_h, rs_h, con_h, tb_cen, e_h, p_h, e_cen, p_cen) in enumerate(
+                    zip(
+                        Mhl_vir_tab2,
+                        Mhl_200c_tab2,
+                        Mcenl_tab2,
+                        rvirhl_tab2,
+                        rs_hl_tab2,
+                        conhl_vir_tab2,
+                        tb_cenl_tab2,
+                        eliphl_tab2,
+                        polarhl_tab2,
+                        elipcenl_tab2,
+                        polarcenl_tab2,
+                        strict=True,
+                    )
+            ):
+
+                # Start: for-loop-3 of lensing events for each host halos
+                for _ in range(cut_n_src[j]):
+                    kk = int(n_src_sample * np.random.rand())
+                    zs = zs_tab[kk]
+
+                    if zs > zs_min:
+                        ms = m_tab[kk]
+                        fs = f_tab[kk]
+                        gg, tgg = solve_lenseq.set_shear(zs)
+                        kap_pert = 0.0
+
+                        lens_par = [
+                            ["anfw", zl, mh, 0.0, 0.0, e_h, p_h, con_h, 0.0],
+                            ["ahern", zl, mcen, 0.0, 0.0, e_cen, p_cen, tb_cen, 0.0],
+                            ["pert", zl, zs, 0.0, 0.0, gg, tgg, 0.0, kap_pert],
+                        ]
+
+                        ein_hl_zs = solve_lenseq_glafic.calc_ein(zs, lens_par, cosmo)
+
+                        if ein_hl_zs > (g.sepmin * 0.2):
+                            sx = (np.random.rand() - 0.5) * 2.0 * cut_box_src[j]
+                            sy = (np.random.rand() - 0.5) * 2.0 * cut_box_src[j]
+
+                            if np.abs(sx) < (ein_hl_zs * (g.rt_range + 1.0)) and np.abs(sy) < (ein_hl_zs * (g.rt_range + 1.0)):
+                                srcs_par = [zs, sx, sy]
+
+                                storage_result(
+                                    lens_par,
+                                    srcs_par,
+                                    ms,
+                                    fs,
+                                    ein_hl_zs,
+                                    g.flag_h,
+                                    result_lens_par,
+                                    result_srcs_par,
+                                    result_imgs_par,
+                                    result_kapg_par,
+                                    result_evnt_par,
+                                    cosmo,
+                                )
+
+        # Start: for-loop-2 of host halos , for all host haloes
         for j, (mh, mh_200c, mcen, rvir_h, rs_h, con_h, tb_cen, e_h, p_h, e_cen, p_cen) in enumerate(
             zip(
-                Mhl_vir_tab2,
-                Mhl_200c_tab2,
-                Mcenl_tab2,
-                rvirhl_tab2,
-                rs_hl_tab2,
-                conhl_vir_tab2,
-                tb_cenl_tab2,
-                eliphl_tab2,
-                polarhl_tab2,
-                elipcenl_tab2,
-                polarcenl_tab2,
+                Mhl_vir_tab1,
+                Mhl_200c_tab1,
+                Mcenl_tab1,
+                rvirhl_tab1,
+                rs_hl_tab1,
+                conhl_vir_tab1,
+                tb_cenl_tab1,
+                eliphl_tab1,
+                polarhl_tab1,
+                elipcenl_tab1,
+                polarcenl_tab1,
                 strict=True,
             )
         ):
-            indices_sh = np.nonzero(NNsh2[j])[0]
-            cut_Nsh = NNsh2[j][indices_sh]
-            cut_msh = mmsh2[j][indices_sh]
-            cut_msh_acc = mmsh_acc2[j][indices_sh]
+            indices_sh = np.nonzero(NNsh1[j])[0]
+            cut_Nsh = NNsh1[j][indices_sh]
+            cut_msh = mmsh1[j][indices_sh]
+            cut_msh_acc = mmsh_acc1[j][indices_sh]
             # Subhalo mass
             mshl_tab = np.repeat(cut_msh, cut_Nsh)
             msh_accl_tab = np.repeat(cut_msh_acc, cut_Nsh)
@@ -391,49 +467,6 @@ def lens_judge_d_genmock(fov, zz_ar):
                 mshacc_z_vec = np.vstack((np.log10(msh_accl_tab), np.array([zl] * len(mshl_tab)))).T
                 bsrc_sh = interp_bsrc_sh(mshacc_z_vec)
 
-            # Start: for-loop-3 of lensing events for each host halos
-            for _ in range(cut_n_src[j]):
-                kk = int(n_src_sample * np.random.rand())
-                zs = zs_tab[kk]
-
-                if zs > zs_min:
-                    ms = m_tab[kk]
-                    fs = f_tab[kk]
-                    gg, tgg = solve_lenseq.set_shear(zs)
-                    kap_pert = 0.0
-
-                    lens_par = [
-                        ["anfw", zl, mh, 0.0, 0.0, e_h, p_h, con_h, 0.0],
-                        ["ahern", zl, mcen, 0.0, 0.0, e_cen, p_cen, tb_cen, 0.0],
-                        ["pert", zl, zs, 0.0, 0.0, gg, tgg, 0.0, kap_pert],
-                    ]
-
-                    ein_hl_zs = solve_lenseq_glafic.calc_ein(zs, lens_par, cosmo)
-
-                    if ein_hl_zs > (g.sepmin * 0.2):
-                        sx = (np.random.rand() - 0.5) * 2.0 * cut_box_src[j]
-                        sy = (np.random.rand() - 0.5) * 2.0 * cut_box_src[j]
-
-                        if np.abs(sx) < (ein_hl_zs * (g.rt_range + 1.0)) and np.abs(sy) < (ein_hl_zs * (g.rt_range + 1.0)):
-                            srcs_par = [zs, sx, sy]
-
-                            storage_result(
-                                lens_par,
-                                srcs_par,
-                                ms,
-                                fs,
-                                ein_hl_zs,
-                                g.flag_h,
-                                result_lens_par,
-                                result_srcs_par,
-                                result_imgs_par,
-                                result_kapg_par,
-                                result_evnt_par,
-                                cosmo,
-                            )
-
-            # Start: If at least one subhalo exists in loop-2 of host halos
-            if len(mshl_tab) != 0:
                 rb_cen = tb_cen / convert_t
                 box_src_sh = bsrc_sh
                 nn_sh_src = 4.0 * box_src_sh**2 * d
@@ -734,7 +767,7 @@ if __name__ == "__main__":
 
     d = float(len(m_tab)) / (fov * 3600.0 * 3600.0)
     n_src_sample = float(len(m_tab))
-
+    
     # setting for calculated redshift of lensing object
     dz = 0.001
     zmin = g.zlmin  # for interp_bsrc_h, zmin cannot be < 0.1 due to the way to create interpolators

@@ -124,8 +124,8 @@ class _const:
         self.maglim = 3.0
         self.zlmin = 0.1
         self.zlmin_pop = 0.01
-        self.log10Msh_min = 10.0
-        self.log10Mh_min = 11.0
+        self.log10Msh_min = 9.0
+        self.log10Mh_min = 10.0
         self.log10Mh_max = 16.0
 
     class ConstError(TypeError):

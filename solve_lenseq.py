@@ -86,7 +86,7 @@ def calc_image(lens_par, srcs_par, ein, rt_range, flag_mag, cosmo):
     if nim <= 1:
         n = 0.0
         a = []
-        mags = out_img[0][2] if nim == 1 else n
+        mags = abs(out_img[0][2]) if nim == 1 else n
         return out_img, nim, n, mags, mags, n, kapgam
 
     mi.sort(reverse=True)
