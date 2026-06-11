@@ -2,6 +2,7 @@ result/*.dat
 result/*.txt
 result/*
 *.sh
+!scripts/*.sh
 *_old.py
 *_change.py
 nohup*
@@ -10,5 +11,9 @@ nohup*
 *~
 .DS_Store
 __pycache__/
+.pixi/
+.deps/
 *.prof
-*.dat
+*.dat# pixi environments
+.pixi/*
+!.pixi/config.toml
