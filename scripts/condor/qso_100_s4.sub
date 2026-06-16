@@ -1,0 +1,17 @@
+universe        = vanilla
+executable      = scripts/condor/run_mock.sh
+arguments       = --area=100 --ilim=23.3 --zlmax=3.0 --source=qso --prefix=qso_100 --solver=glafic
+
+request_cpus    = 99
+request_memory  = 16GB
+request_disk    = 2GB
+
+requirements    = (Machine == "tgfli-s4.phy.cuhk.edu.hk")
+
+output          = logs/qso_100_s4.out
+error           = logs/qso_100_s4.err
+log             = logs/qso_100_s4.log
+
+environment     = "NWORKER=99"
+
+queue

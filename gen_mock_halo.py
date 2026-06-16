@@ -82,7 +82,7 @@ def run_command_line(argv):
             prefix = a
         elif o in ("--solver"):
             solver = a
-        elif o in ("--nworkers"):
+        elif o in ("--nworker"):
             nworker = int(a)
 
     print("# area  : %f" % area)

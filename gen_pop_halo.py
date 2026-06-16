@@ -46,7 +46,7 @@ def run_command_line(argv):
             switch_sub = a in ("True", "true", "yes", "Y", "1")
         elif o in ("--prefix"):
             prefix = a
-        elif o in ("--nworkers"):
+        elif o in ("--nworker"):
             nworker = int(a)
 
     print("# area  : %f" % area)

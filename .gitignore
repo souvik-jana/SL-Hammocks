@@ -1,19 +1,33 @@
-result/*.dat
-result/*.txt
+# Simulation outputs (keep catalog.md tracked)
 result/*
+!result/catalog.md
+
+# Condor / local run logs
+logs/
+output*.log
+nohup*
+
+# Intermediate / binary artifacts
+*.npz
+*.prof
+
+# Shell scripts (allow project scripts)
 *.sh
-!scripts/*.sh
+!scripts/**/*.sh
+
+# Scratch / backup files
 *_old.py
 *_change.py
-nohup*
-*.npz
 *.py#
 *~
+
+# OS / editor
 .DS_Store
+
+# Python
 __pycache__/
+*.pyc
+
+# pixi environment
 .pixi/
 .deps/
-*.prof
-*.dat# pixi environments
-.pixi/*
-!.pixi/config.toml
