@@ -1,34 +1,38 @@
-# Condor computation — `gen_mock_halo.py`
+# Condor computation
+
+Each **task** = one **chunk** of sky × **all lens redshifts** (`z = 0.1 … zlmax`, step 0.001). One task ≈ **one CPU × ~20 min** (depends on `zlmax`).
+
+**Chunk split** (`gen_mock_halo.py`):
 
 ```
-n_split       = floor(area / nworker)     # jobs per CPU
-total_tasks   = n_split × nworker
-chunk_area    = area / total_tasks        # must be ≥ 1 deg²
-jobs_per_cpu  = n_split
+jobs_per_cpu = floor(area / nworker)
+n_chunks     = jobs_per_cpu × nworker
+chunk_area   = area / n_chunks          # must be ≥ 1 deg²
 ```
 
-**Example:** `area=14000`, `nworker=200` → **70 jobs/CPU** × **14,000 tasks** × **1.0 deg²**.
-
-**Condor:** `request_cpus` must equal `NWORKER`. Submit: `condor_submit /users/souvik.jana/SL-Hammocks/scripts/condor/qso_14k.sub`
-
-**Monitor:** `tail -f logs/qso_14k_s4.err` — progress `Done N tasks` (total = `n_split × nworker`). `.dat` files fill only at end.
-
----
-
-## Est. wall time
-
-One task (~1 deg²) ≈ **20 min on one CPU** (measured: `qso_100` ~15 min @ `zlmax=3`; `qso_14k` ~23 min @ `zlmax=4`).
+Usually `chunk_area ≈ 1 deg²`. Example: `area=14,000`, `nworker=200` → 70 × 200 chunks → **1.0 deg²** each.
 
 ```
-T = jobs_per_cpu × 20 min + setup
-  = n_split × 20 min + ~30 min
+jobs_per_cpu = floor(area / nworker)
+total time   = jobs_per_cpu × (time per task) + ~30 min setup
 ```
 
-| nworker | Tasks | jobs/CPU | Est. time |
-|--------:|------:|---------:|-----------|
+**Time per task vs `zlmax`:**
+
+| zlmax | z bins | ~time / task |
+|------:|-------:|-------------:|
+| 3.0 | 2,901 | ~15 min |
+| 4.0 | 3,901 | ~20 min |
+
+(`z bins = (zlmax − 0.1) / 0.001 + 1`; scale roughly linear with bin count.)
+
+**Example:** `area = 14,000 deg²`, `zlmax = 4`, `nworker = 200` → 70 jobs/CPU × 20 min ≈ **23 h**.
+
+| nworker | area (deg²) | jobs/CPU | est. time (@ zlmax=4) |
+|--------:|------------:|---------:|----------------------:|
 | 10 | 14,000 | 1,400 | ~19 days |
-| 99 | 13,959 | 141 | ~47 h |
+| 99 | 14,000 | 141 | ~47 h |
 | 200 | 14,000 | 70 | ~23 h |
-| 256 | 13,824 | 54 | ~18 h |
+| 256 | 14,000 | 54 | ~18 h |
 
-**Check:** `area=100`, `nworker=99` → 1 job/CPU × 20 min ≈ **20 min** (observed **14.9 min** @ `zlmax=3`).
+**Condor:** `request_cpus` = `NWORKER`. Monitor: `tail -f logs/*_s4.err` (`Done N tasks`, total ≈ area).
