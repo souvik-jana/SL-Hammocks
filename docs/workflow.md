@@ -578,7 +578,7 @@ Typical use: read `result.dat` for event + lens demographics; read `log.dat` for
 
 Column definitions, units, `flag_out` values, lens component indices, and Python reload examples:
 
-**[result/catalog.md](../result/catalog.md)**
+**[catalog.md](catalog.md)**
 
 ---
 

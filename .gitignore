@@ -1,6 +1,5 @@
-# Simulation outputs (keep catalog.md tracked)
+# Simulation outputs (docs/catalog.md documents format; data files live here)
 result/*
-!result/catalog.md
 
 # Condor / local run logs
 logs/
