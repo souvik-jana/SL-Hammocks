@@ -15,10 +15,24 @@ nohup*
 # Python cache
 __pycache__/
 *.pyc
+.pytest_cache/
 
 # Profiling
 *.prof
 
+# Cursor agent skills (local install, not project source)
+.agents/
+skills-lock.json
+
+# Scratch / backup files
+*_old.py
+*_change.py
+*.py#
+*~
+
+# Shell scripts outside scripts/
+*.sh
+!scripts/**/*.sh
+
 # Editor / OS noise
 .DS_Store
-*~

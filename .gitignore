@@ -27,7 +27,12 @@ nohup*
 # Python
 __pycache__/
 *.pyc
+.pytest_cache/
 
 # pixi environment
 .pixi/
 .deps/
+
+# Cursor agent skills (local install)
+.agents/
+skills-lock.json
