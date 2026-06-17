@@ -1,0 +1,18 @@
+universe        = vanilla
+initialdir      = /users/souvik.jana/SL-Hammocks
+executable      = /users/souvik.jana/SL-Hammocks/scripts/condor/run_mock.sh
+arguments       = --area=14000 --ilim=23.3 --zlmax=5.0 --source=qso --prefix=qso_14k --solver=glafic
+
+request_cpus    = 200
+request_memory  = 38GB
+request_disk    = 2GB
+
+requirements    = (Machine == "tgfli-s4.phy.cuhk.edu.hk")
+
+output          = /users/souvik.jana/SL-Hammocks/logs/qso_14k_s4.out
+error           = /users/souvik.jana/SL-Hammocks/logs/qso_14k_s4.err
+log             = /users/souvik.jana/SL-Hammocks/logs/qso_14k_s4.log
+
+environment     = "NWORKER=200"
+
+queue

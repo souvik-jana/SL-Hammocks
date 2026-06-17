@@ -217,7 +217,7 @@ For halos with ≥1 background source (Poisson draw from source density behind l
    ```
    [NFW host, Hernquist central, external perturbation]
    ```
-   Models: `anfw`, `ahern`, `pert` (large-scale shear from `solve_lenseq.set_shear(zs)`).
+   Models: `anfw`, `ahern`, `pert` — see [Lens models](#lens-models).
 
 4. Compute Einstein radius: `solve_lenseq_glafic.calc_ein(zs, lens_par, cosmo)`.
 
@@ -236,6 +236,91 @@ For each subhalo with sources behind it:
    ```
 3. Same source draw, Einstein radius, position sampling (using `interp_bsrc_sh`).
 4. Store `frac_sh_trunc = m_sh / m_sh_acc` (tidal truncation fraction).
+
+See [Lens models](#lens-models) for parameter definitions (`anfw`, `ahern`, `pert`, PA, `gg`, `tgg`).
+
+---
+
+## Lens models
+
+Each lensing trial builds a list of GLAFIC components passed to `glafic.set_lens()`. The lens equation is solved with **GLAFIC** (Oguri 2010; fast elliptical profiles from Oguri et al. 2021, [arXiv:2106.11464](https://arxiv.org/abs/2106.11464)).
+
+### Component types
+
+| Name | Profile | Role |
+|------|---------|------|
+| `anfw` | Approximated elliptical **NFW** | Dark matter: host halo or subhalo |
+| `ahern` | Approximated elliptical **Hernquist** | Stars: central or satellite galaxy |
+| `pert` | External **pert**urbation | Line-of-sight tidal shear |
+
+The **`a`** prefix marks GLAFIC’s fast **approximated** elliptical NFW/Hernquist models (superposition of cored ellipsoids), not a separate physics model.
+
+### Configurations
+
+**Host-only (3 components):**
+
+```
+[anfw host, ahern central, pert]
+```
+
+**Subhalo (5 components)** — origin recentered on subhalo; host + central offset:
+
+```
+[anfw subhalo, ahern satellite, anfw host, ahern central, pert]
+```
+
+### Parameter rows
+
+General layout: `[type, zl, …]`. Positions `(x, y)` are in arcsec in the local lens frame.
+
+**`anfw`** — dark matter halo
+
+```
+["anfw", zl, M_vir, x, y, e, PA, c, 0.0]
+```
+
+| Field | Meaning |
+|-------|---------|
+| `M_vir` | Virial mass [M☉/h] |
+| `x`, `y` | Lens center [arcsec] |
+| `e` | Ellipticity (axis ratio) |
+| `PA` | Position angle [deg] — orientation of major axis on the sky (catalog column `p`) |
+| `c` | NFW concentration |
+
+**`ahern`** — stellar galaxy
+
+```
+["ahern", zl, M_*, x, y, e, PA, tb, 0.0]
+```
+
+| Field | Meaning |
+|-------|---------|
+| `M_*` | Stellar mass [M☉/h] |
+| `e`, `PA` | Same as halo |
+| `tb` | Hernquist scale radius [arcsec] |
+
+**`pert`** — line-of-sight structure (`solve_lenseq.set_shear(zs)`)
+
+```
+["pert", zl, zs, 0.0, 0.0, gg, tgg, 0.0, κ_ext]
+```
+
+| Field | Meaning |
+|-------|---------|
+| `zs` | Source redshift (shear drawn for this source plane) |
+| `gg` | External shear **magnitude** γ — from `gene_gam(zs)` (Oguri 2018, [arXiv:1807.02584](https://arxiv.org/abs/1807.02584)); RMS scales with `zs` |
+| `tgg` | External shear **angle** [deg] — orientation of γ on the sky; uniform in [-180°, 180°) |
+| `κ_ext` | External convergence; fixed at **0** in this code (`kap_pert = 0.0`) |
+
+### How `e` and `PA` are assigned
+
+| Component | Ellipticity `e` | Position angle `PA` |
+|-----------|-----------------|---------------------|
+| Host halo | Mass-dependent fit + scatter (Okabe et al. 2020) via `gene_e_halo()` | Uniform [-180°, 180°) via `gene_ang()` |
+| Subhalo | `gene_e_ang_halo()` | Same as halo |
+| Central / satellite galaxy | Truncated normal via `gene_e()` | Gaussian around halo PA, σ ≈ 35° via `gene_ang_gal()` |
+
+Galaxy and halo ellipticities are independent draws; galaxy PA is loosely aligned with its halo.
 
 ---
 
@@ -437,14 +522,9 @@ solve_lenseq_glafic.py    GLAFIC wrapper: init, solve, Einstein radius
 
 ## Physical models summary
 
-| Component | Profile | Key inputs |
-|-----------|---------|------------|
-| Host halo | NFW (`anfw`) | M_vir, c, e, PA |
-| Subhalo | NFW (`anfw`) | M_acc, c, position in host |
-| Central / satellite galaxy | Hernquist (`ahern`) | M_*, scale radius, e, PA |
-| Line-of-sight structure | Perturbation (`pert`) | External shear + κ |
+Lens components (`anfw`, `ahern`, `pert`), parameter meanings (PA, `gg`, `tgg`), and host vs subhalo setups: see [Lens models](#lens-models).
 
-Cosmology, mass functions, and concentration–mass relations come from **Colossus**. Lens equation solved by **GLAFIC**.
+Cosmology, mass functions, and concentration–mass relations come from **Colossus**.
 
 ---
 
