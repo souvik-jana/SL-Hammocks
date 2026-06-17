@@ -1,7 +1,7 @@
 universe        = vanilla
 initialdir      = /users/souvik.jana/SL-Hammocks
 executable      = /users/souvik.jana/SL-Hammocks/scripts/condor/run_mock.sh
-arguments       = --area=14000 --ilim=23.3 --zlmax=5.0 --source=qso --prefix=qso_14k --solver=glafic
+arguments       = --area=14000 --ilim=23.3 --zlmax=4.0 --source=qso --prefix=qso_14k --solver=glafic
 
 request_cpus    = 200
 request_memory  = 38GB
